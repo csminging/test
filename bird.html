@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>进击的小鸟</title>
+    <style>
+        canvas{
+            display: block;
+            margin:0 auto;
+        }
+
+        #box{
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 0 auto;
+        }
+        #tip {
+            position: absolute;
+
+        }
+        #comeon {
+            position: absolute;
+            display:none;
+
+        }
+
+    </style>
+</head>
+<body>
+<div id="box">
+    <div id="tip">按下Enter键，开启你的开挂人生</div>
+    <div id="comeon">按下shift键，进入快速刷分，开启你的巅峰人生！</div>
+<canvas width="800" height="600" style ="border:1px solid #ccc" id="mycanvas"></canvas>
+</div>
+<script>
+    (function (w) {
+        var callback = null;
+        var total =0;
+        var imgObjPath = {
+            bird: "imgs/birds.png",
+            land: "imgs/land.png",
+            pipeDown: "imgs/pipeDown.png",
+            pipeUp: "imgs/pipeUp.png",
+            sky: "imgs/sky.png"
+        };
+        var imgObj = {};
+        for (var key in imgObjPath) {
+            var img = new Image();
+            img.src = imgObjPath[key];
+            img.addEventListener("load", function () {
+                total++;
+                if(total>=5) {
+                    callback(imgObj);
+                }
+            })
+            imgObj[key] = img;
+        }
+        w.getImg=function(fn) {
+            callback = fn;
+        };
+    })(window);
+
+//    主函数
+    (function main() {
+        var canvas = document.getElementById("mycanvas");
+        var tip = document.getElementById("tip")
+        var fast = document.getElementById("comeon")
+        var ctx = canvas.getContext("2d");
+        var score =0;
+        var autoFlag = false;
+        var fastGo = false;
+        var prePipe=0;
+        var prePipe1=0;
+        getImg(function(imgObj) {
+
+            //创建天空对象，绘制
+            var sky = new Sky(0, 0, imgObj.sky.width, imgObj.sky.height);
+            drawObj(sky,imgObj.sky,ctx,sky.x,sky.y,2);
+
+            //创建大地对象，绘制
+            var land = new Land(0,canvas.height-imgObj.land.height,imgObj.land.width,imgObj.land.height);
+            drawObj(land,imgObj.land,ctx,land.x,land.y,4);
+
+            //创建管道对象，绘制
+            var pipe = new Pipe( 0,0,imgObj.pipeDown.width,imgObj.pipeDown.height);
+            for(var i=0;i<6;i++) {
+                pipe.pipeArr.push(pipe.draw(imgObj,ctx,pipe.startPosition+pipe.pipeW*i,random(90, 130),random(80,240)));
+
+            }
+
+            //创建小鸟对象，img, ctx, x, y,w, h)
+            var arr = [0,imgObj.bird.width/3,imgObj.bird.width*2/3,imgObj.bird.width/3],arrIndex= 0,arrIndex1=0;
+            var bird = new Bird(80, 80, imgObj.bird.width / 3, imgObj.bird.height);
+            bird.draw(imgObj.bird,ctx,imgObj.bird.width/3*2,0,50,50)
+            //添加小鸟鼠标点击监听
+            canvas.addEventListener("click", function () {
+                bird.speed = bird.upSpeed;
+            })
+            document.addEventListener("keydown",function(e) {
+                console.log(e.keyCode)
+
+                if(e.keyCode==32) {
+                    bird.speed = bird.upSpeed;
+                }
+                //开启关闭你自动跑
+                if(e.keyCode==13){
+                    autoFlag = !autoFlag;
+                }
+                //开启快速模式
+                if(autoFlag) {
+                    if(fastGo) {
+                        fast.style.display = "block";
+
+                    }
+                    if(e.keyCode==16) {
+                        fastGo = !fastGo;
+                    }
+                }
+            });
+
+            //添加显示分数
+            ctx.font="20px Miscrosoft yahei";
+            ctx.fillText("分数："+score,600,30);
+
+
+
+
+//            更新，对象移动--------------------------------------------------------------
+            var timer = setInterval(function () {
+                //清空画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                //天空移动
+                sky.move('x',sky.speed);
+                drawObj(sky,imgObj.sky,ctx,sky.x,sky.y,2);
+                //大地移动
+                land.move('x',land.speed);
+                drawObj(land,imgObj.land,ctx,land.x,land.y,4);
+
+                //管道移动
+                pipe.move();
+                for(var i=0;i<pipe.pipeArr.length;i++) {
+                    //重绘管道
+
+                    pipe.draw(imgObj,ctx,pipe.pipeArr[i].position,pipe.pipeArr[i].pipeH,pipe.pipeArr[i].h)
+                    //计算分数
+                    if(!pipe.pipeArr[i].pass){
+                        if(pipe.pipeArr[i].position+pipe.w/2<bird.x) {
+                            score+=1;
+                            pipe.pipeArr[i].pass = true;
+
+                             prePipe = parseFloat(pipe.pipeArr[i].pipeH);
+                            prePipe1 =parseFloat(pipe.pipeArr[i].pipeH)+parseFloat(pipe.pipeArr[i].h)
+//
+                        }
+                    }
+                }
+                //管道出界移除，并添加新的管道
+                if(pipe.pipeArr[0].position<-100) {
+                    var p =300- pipe.pipeArr[0].position;
+                    pipe.pipeArr.shift();
+                   pipe.pipeArr.push(pipe.draw(imgObj,ctx,pipe.startPosition+pipe.pipeW*(pipe.pipeArr.length+1)-p-pipe.w,random(90, 130),random(80,240)));
+                }
+
+                //小鸟移动
+                arrIndex+=1;// 定时器执行一次加1，每10次，小鸟挥动翅膀一次
+                if(fastGo) {
+                    if(arrIndex%3==0) {
+                        arrIndex1+=1;
+                    }
+                }else{
+                    if(arrIndex%1==0) {
+                        arrIndex1+=1;
+                    }
+                }
+
+                bird.move('y',bird.speed);
+                bird.draw(imgObj.bird,ctx,arr[arrIndex1%4],0,50,50)
+//                console.log(bird.w);
+//                console.log(bird.h);
+                //判断小鸟出界
+                var birdPisition = bird.y+bird.h/2;
+                if(birdPisition<0 || birdPisition>canvas.height) {
+                    clearInterval(timer);
+                    if(birdPisition>canvas.height){
+                        bird.y=canvas.height-40;
+                        bird.draw(imgObj.bird,ctx,arr[arrIndex1%4],0,50,50)
+                    }
+                }
+                //判断小鸟撞上管道
+                if(ctx.isPointInPath(bird.x+bird.w/2-8,bird.y+bird.h/2-8) || ctx.isPointInPath(bird.x+bird.w-15,bird.y+bird.h-15)) {
+                    clearInterval(timer);
+                    if(autoFlag) {
+                        ctx.fillText("卧槽，无语啊，开挂也能撞上",bird.x+60,bird.y+20)
+                    }
+                }
+                //每次清空管道碰撞路径，添加分数
+                ctx.beginPath();
+                ctx.fillText("分数："+score,600,30);
+
+
+
+                if(autoFlag) {
+
+//                        tip.innerHTML="按Enter取消开挂";
+                    tip.style.display = "none"
+                    fast.style.display = "block";
+                    for(var i=0;i<pipe.pipeArr.length;i++) {
+                        if(!pipe.pipeArr[i].pass){
+                            //管道左边位置
+                            var pipePl = pipe.pipeArr[i].position;
+                            //管道中部位置
+                            var pipePm =pipe.pipeArr[i].position+pipe.w/2;
+                            //管道右边位置
+                            var pipePr =pipe.pipeArr[i].position+pipe.w;
+
+                            //上管道底部
+                            var pipeHt = pipe.pipeArr[i].pipeH;
+                            //下管道顶部
+                            var pipeHb = pipe.pipeArr[i].pipeH+pipe.pipeArr[i].h;
+                            //小鸟
+                            var  birdt =bird.y;
+                            var birdb = bird.y+bird.h;
+//                            if(bird.y>pipeh-20||bird.x>pipeP-50&&(bird.y+bird.h)>pipeh||bird.x>pipeP-20&&(bird.y+bird.h)<pipeh+30&&bird.y>pipe.pipeArr[i].pipeH+30) {
+                            // 小鸟低于下管道    小鸟接近管道并快下落                                            小鸟快退出上次管道，顶部有足够的距离
+                            if(birdb>pipeHb&&bird.x>pipePl-pipe.pipeW||bird.x<pipePl&&pipePl-65<bird.x&&birdb<pipeHb&&birdb>pipeHb-30 ||pipePl-pipe.pipeW-30>bird.x&&birdt>prePipe+60||bird.x>pipePm&&bird.x<pipePr&&birdb>pipeHb-10&&birdt>pipeHt+60) {
+//                                console.log(pipeh+"....."+bird.y+"..."+i)
+                                if(fastGo) {
+                                    bird.speed =-10;
+//                                    pipe.pipeW = 200;
+
+                                }else{
+
+//                                    console.log(pipeHt+"....")
+                                    if(prePipe1-pipeHb>50&&pipePl-65>bird.x) {
+                                        bird.speed =bird.upSpeed-2;
+
+                                    }else{
+                                        bird.speed =bird.upSpeed;
+
+//                                        console.log(222222222222)
+
+                                    }
+
+//                                    pipe.pipeW = 180;
+
+                                }
+
+
+                            }
+                            break;
+                        }
+
+                    }
+                }else{
+                    tip.innerHTML="按下Enter键，开启你的开挂人生"
+                    fast.style.display = "none"
+                    tip.style.display = "block";
+                }
+
+                if(fastGo) {
+                    fast.innerHTML="快速刷分模式开启，按shift取消"
+                    pipe.speed=land.speed = sky.speed =-7;
+                    bird.speedPlus =1.8;
+
+
+                }else{
+                    fast.innerHTML="按下shift键，开启刷分模式"
+                    pipe.speed=land.speed = sky.speed =-3;
+                    bird.speedPlus =0.4;
+                }
+
+            },20)
+        });
+
+    })();
+
+    ///////////////////////////////////////////////////////////////////以下是各种对象类的定义
+
+    //继承工具
+    function extend(sub,sup) {
+        function F(){};
+        F.prototype = sup.prototype;
+        var f = new F();
+
+        sub.prototype = f;
+        sub.constructor = sub;
+    }
+    //各对象多次绘画封装(天空，大地）
+     function drawObj(obj,imgobj,ctx,x,y,n){
+      for(var i=0;i<n;i++) {
+          obj.draw(imgobj,ctx,x+i*obj.w,y)
+
+      }
+    }
+    //产生随机数
+    function random(min,max) {
+        return Math.floor(Math.random() * (max - min) + min);
+    }
+    //角度转换
+    function angleChange(num) {
+        return num / 180 * Math.PI;
+    }
+    //-------------------------------------------------------------------------//
+    //抽象绘图类---------------------
+    function DrawImg(x,y,w,h) {
+        this.x =x;
+        this.y=y;
+        this.w =w;
+        this.h =h;
+        this.speed =-1;
+//        this.speedPlus = -1.01;
+    }
+    DrawImg.prototype.draw = function(img,ctx,x,y) {
+        ctx.drawImage(img,x,y, this.w, this.h);
+    };
+    DrawImg.prototype.move = function(dir,speed) {
+        this[dir]+=speed;
+        this.speed +=this.speedPlus;
+        if(this[dir]<-this.w) {
+            this[dir]=0;
+        }
+    };
+
+
+    //绘画天空背景类
+    extend(Sky,DrawImg);
+    function Sky(x,y,w,h){
+        DrawImg.call(this, x, y, w, h);
+    }
+
+    //绘画大地类
+    extend(Land,DrawImg);
+    function Land(x,y,w,h){
+        DrawImg.call(this, x, y, w, h);
+    }
+
+    //绘画小鸟类
+    extend(Bird,DrawImg);
+    function Bird(x,y,w,h){
+        DrawImg.call(this, x, y, w, h);
+        this.speed = 1;
+        this.speedPlus =0.1;
+
+        this.upSpeed = -2;
+    }
+    /**
+     * x，y:小鸟图像起始坐标
+     * w, h:绘画的小鸟大小
+     *
+     * */
+    Bird.prototype.draw = function (img, ctx, x, y,w, h) {
+        ctx.save();
+
+
+        var angle =angleChange(this.speed*10>15?15:this.speed*10) ;
+        if(this.speedPlus>1) {
+            angle = angle/2;
+        }
+        ctx.translate(this.x+32,this.y+32)
+        ctx.rotate(angle);
+        ctx.translate(-32,-32)
+        ctx.drawImage(img, x, y, this.w, this.h,0, 0, w, h);
+        ctx.restore();
+    };
+    Bird.prototype.move = function(dir,speed) {
+        this[dir]+=speed;
+        this.speed+=this.speedPlus;
+    };
+    //绘制管道类
+    extend(Pipe,DrawImg)
+    function Pipe(x,y,w,h){
+        DrawImg.call(this, x, y, w, h);
+        this.pipeArr = [];
+        this.pipeW =180;
+        this.startPosition = 350;
+    }
+
+    Pipe.prototype.draw = function(imgObj,ctx,x1,num,h) {
+        ctx.drawImage(imgObj.pipeDown, 0, 420-h, this.w, h,x1,0,this.w,h);
+        ctx.drawImage(imgObj.pipeUp, 0, 0, this.w,600-num-h-112,x1,num+h,this.w,600-num-h-112);
+
+        ctx.rect(x1,0,this.w,h);
+        ctx.rect(x1, num + h,this.w,600-num-h-112);
+
+        return {
+            pipeH:num,
+            h:h,
+            position:x1,
+            pass:false
+        }
+    };
+
+    Pipe.prototype.move = function() {
+        for(var i=0;i<this.pipeArr.length;i++) {
+            this.pipeArr[i].position+=this.speed;
+        }
+    };
+</script>
+</body>
+</html>
