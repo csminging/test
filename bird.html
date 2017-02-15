@@ -1,5 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>愤怒的小鸟</title>
+    <style>
 
-啊啊啊啊啊啊啊啊啊啊啊啊啊
         canvas{
             display: block;
             margin:0 auto;
@@ -27,7 +35,7 @@
 <div id="box">
     <div id="tip">按下Enter键，开启你的开挂人生</div>
     <div id="comeon">按下shift键，进入快速刷分，开启你的巅峰人生！</div>
-<canvas width="800" height="600" style ="border:1px solid #ccc" id="mycanvas"></canvas>
+    <canvas width="800" height="600" style ="border:1px solid #ccc" id="mycanvas"></canvas>
 </div>
 <script>
     (function (w) {
@@ -57,7 +65,7 @@
         };
     })(window);
 
-//    主函数
+    //    主函数
     (function main() {
         var canvas = document.getElementById("mycanvas");
         var tip = document.getElementById("tip")
@@ -145,7 +153,7 @@
                             score+=1;
                             pipe.pipeArr[i].pass = true;
 
-                             prePipe = parseFloat(pipe.pipeArr[i].pipeH);
+                            prePipe = parseFloat(pipe.pipeArr[i].pipeH);
                             prePipe1 =parseFloat(pipe.pipeArr[i].pipeH)+parseFloat(pipe.pipeArr[i].h)
 //
                         }
@@ -155,7 +163,7 @@
                 if(pipe.pipeArr[0].position<-100) {
                     var p =300- pipe.pipeArr[0].position;
                     pipe.pipeArr.shift();
-                   pipe.pipeArr.push(pipe.draw(imgObj,ctx,pipe.startPosition+pipe.pipeW*(pipe.pipeArr.length+1)-p-pipe.w,random(90, 130),random(80,240)));
+                    pipe.pipeArr.push(pipe.draw(imgObj,ctx,pipe.startPosition+pipe.pipeW*(pipe.pipeArr.length+1)-p-pipe.w,random(90, 130),random(80,240)));
                 }
 
                 //小鸟移动
@@ -187,7 +195,7 @@
                 if(ctx.isPointInPath(bird.x+bird.w/2-8,bird.y+bird.h/2-8) || ctx.isPointInPath(bird.x+bird.w-15,bird.y+bird.h-15)) {
                     clearInterval(timer);
                     if(autoFlag) {
-                        ctx.fillText("卧槽，无语啊，开挂也能撞上",bird.x+60,bird.y+20)
+                        ctx.fillText("无语啊，这也能撞上",bird.x+60,bird.y+20)
                     }
                 }
                 //每次清空管道碰撞路径，添加分数
@@ -283,11 +291,11 @@
         sub.constructor = sub;
     }
     //各对象多次绘画封装(天空，大地）
-     function drawObj(obj,imgobj,ctx,x,y,n){
-      for(var i=0;i<n;i++) {
-          obj.draw(imgobj,ctx,x+i*obj.w,y)
+    function drawObj(obj,imgobj,ctx,x,y,n){
+        for(var i=0;i<n;i++) {
+            obj.draw(imgobj,ctx,x+i*obj.w,y)
 
-      }
+        }
     }
     //产生随机数
     function random(min,max) {
